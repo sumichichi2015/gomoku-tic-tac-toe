@@ -1,175 +1,118 @@
 class TicTacToe {
     constructor() {
-        this.board = Array(9).fill(null);
-        this.currentPlayer = 'きもと';
+        this.currentPlayer = 'black';
+        this.board = Array(9).fill('');
+        this.wins = { black: 0, white: 0 };
         this.gameActive = true;
-        this.scores = {
-            'きもと': 0,
-            'ありみ': 0
-        };
-        this.winningCombinations = [
+        this.winningCombos = [
             [0, 1, 2], [3, 4, 5], [6, 7, 8],
             [0, 3, 6], [1, 4, 7], [2, 5, 8],
             [0, 4, 8], [2, 4, 6]
         ];
-
+        
         this.cells = document.querySelectorAll('.cell');
-        this.statusDisplay = document.getElementById('current-player');
+        this.currentPlayerDisplay = document.getElementById('current-player');
         this.resetButton = document.getElementById('reset-button');
-
+        
         this.initializeGame();
-        this.initializeParticles();
     }
-
+    
     initializeGame() {
         this.cells.forEach(cell => {
-            cell.addEventListener('click', () => this.handleCellClick(cell));
-            cell.classList.remove('kimoto', 'arimi', 'winning');
+            cell.addEventListener('click', (e) => this.handleCellClick(e));
         });
-
+        
         this.resetButton.addEventListener('click', () => this.resetGame());
-        this.updateScoreDisplay();
+        this.updateCurrentPlayerDisplay();
     }
-
-    initializeParticles() {
-        particlesJS('particles', {
-            particles: {
-                number: {
-                    value: 50,
-                    density: {
-                        enable: true,
-                        value_area: 800
-                    }
-                },
-                color: {
-                    value: '#1a73e8'
-                },
-                shape: {
-                    type: 'circle'
-                },
-                opacity: {
-                    value: 0.3,
-                    random: true
-                },
-                size: {
-                    value: 3,
-                    random: true
-                },
-                line_linked: {
-                    enable: true,
-                    distance: 150,
-                    color: '#1a73e8',
-                    opacity: 0.2,
-                    width: 1
-                },
-                move: {
-                    enable: true,
-                    speed: 1,
-                    direction: 'none',
-                    random: true,
-                    straight: false,
-                    out_mode: 'out',
-                    bounce: false
-                }
-            },
-            interactivity: {
-                detect_on: 'canvas',
-                events: {
-                    onhover: {
-                        enable: true,
-                        mode: 'grab'
-                    },
-                    resize: true
-                }
-            },
-            retina_detect: true
-        });
-    }
-
-    handleCellClick(cell) {
-        const index = cell.getAttribute('data-index');
-
-        if (this.board[index] || !this.gameActive) return;
-
-        this.board[index] = this.currentPlayer;
-        cell.classList.add(this.currentPlayer === 'きもと' ? 'kimoto' : 'arimi');
-        cell.classList.add('animate__animated', 'animate__bounceIn');
-
-        if (this.checkWin()) {
-            this.gameActive = false;
-            this.scores[this.currentPlayer]++;
-            this.updateScoreDisplay();
-            this.announceWinner();
-            this.highlightWinningCells();
-            return;
+    
+    handleCellClick(e) {
+        const cell = e.currentTarget;
+        const index = cell.dataset.index;
+        
+        if (this.board[index] === '' && this.gameActive) {
+            this.board[index] = this.currentPlayer;
+            const stone = cell.querySelector('.stone');
+            stone.classList.add(this.currentPlayer);
+            stone.classList.add('animate__animated', 'animate__fadeIn');
+            
+            if (this.checkWin()) {
+                this.handleWin();
+            } else if (this.checkDraw()) {
+                this.handleDraw();
+            } else {
+                this.currentPlayer = this.currentPlayer === 'black' ? 'white' : 'black';
+                this.updateCurrentPlayerDisplay();
+            }
         }
-
-        if (this.checkDraw()) {
-            this.gameActive = false;
-            this.announceDraw();
-            return;
-        }
-
-        this.currentPlayer = this.currentPlayer === 'きもと' ? 'ありみ' : 'きもと';
-        this.updateStatus();
     }
-
+    
     checkWin() {
-        return this.winningCombinations.some(combination => {
-            return combination.every(index => {
-                return this.board[index] === this.currentPlayer;
-            });
+        return this.winningCombos.some(combo => {
+            if (
+                this.board[combo[0]] === this.currentPlayer &&
+                this.board[combo[1]] === this.currentPlayer &&
+                this.board[combo[2]] === this.currentPlayer
+            ) {
+                combo.forEach(index => {
+                    this.cells[index].classList.add('winning-cell');
+                });
+                return true;
+            }
+            return false;
         });
     }
-
+    
     checkDraw() {
-        return this.board.every(cell => cell !== null);
+        return this.board.every(cell => cell !== '');
     }
-
-    highlightWinningCells() {
-        const winningCombination = this.winningCombinations.find(combination => {
-            return combination.every(index => this.board[index] === this.currentPlayer);
-        });
-
-        winningCombination.forEach(index => {
-            this.cells[index].classList.add('winning');
-        });
+    
+    handleWin() {
+        this.gameActive = false;
+        this.wins[this.currentPlayer]++;
+        this.updateScoreDisplay();
+        
+        const winnerName = this.currentPlayer === 'black' ? 'サンセット' : 'サンライズ';
+        setTimeout(() => {
+            alert(`${winnerName}の勝利！`);
+        }, 500);
     }
-
-    announceWinner() {
-        this.statusDisplay.textContent = `${this.currentPlayer}の勝利！`;
-        this.statusDisplay.classList.add('animate__animated', 'animate__bounceIn');
+    
+    handleDraw() {
+        this.gameActive = false;
+        setTimeout(() => {
+            alert('引き分けです！');
+        }, 500);
     }
-
-    announceDraw() {
-        this.statusDisplay.textContent = '引き分け！';
-        this.statusDisplay.classList.add('animate__animated', 'animate__bounceIn');
-    }
-
-    updateStatus() {
-        this.statusDisplay.textContent = this.currentPlayer;
-    }
-
-    updateScoreDisplay() {
-        document.querySelector('.kimoto-score .player-wins').textContent = `${this.scores['きもと']} 勝`;
-        document.querySelector('.arimi-score .player-wins').textContent = `${this.scores['ありみ']} 勝`;
-    }
-
+    
     resetGame() {
-        this.board = Array(9).fill(null);
-        this.currentPlayer = 'きもと';
+        this.board = Array(9).fill('');
         this.gameActive = true;
+        this.currentPlayer = 'black';
         
         this.cells.forEach(cell => {
-            cell.classList.remove('kimoto', 'arimi', 'winning', 'animate__animated', 'animate__bounceIn');
+            const stone = cell.querySelector('.stone');
+            stone.classList.remove('black', 'white', 'animate__animated', 'animate__fadeIn');
+            cell.classList.remove('winning-cell');
         });
         
-        this.statusDisplay.classList.remove('animate__animated', 'animate__bounceIn');
-        this.updateStatus();
+        this.updateCurrentPlayerDisplay();
+    }
+    
+    updateCurrentPlayerDisplay() {
+        const playerName = this.currentPlayer === 'black' ? 'サンセット' : 'サンライズ';
+        this.currentPlayerDisplay.textContent = playerName;
+    }
+    
+    updateScoreDisplay() {
+        const kimotoScore = document.querySelector('.kimoto-score .player-wins');
+        const arimiScore = document.querySelector('.arimi-score .player-wins');
+        
+        kimotoScore.textContent = `${this.wins.black} 勝`;
+        arimiScore.textContent = `${this.wins.white} 勝`;
     }
 }
 
-// ゲームの初期化
 document.addEventListener('DOMContentLoaded', () => {
     new TicTacToe();
 });
