@@ -33,6 +33,11 @@ class TicTacToe {
         if (this.board[index] === '' && this.gameActive) {
             this.board[index] = this.currentPlayer;
             const stone = cell.querySelector('.stone');
+            
+            // 既存のクラスをクリア
+            stone.classList.remove('black', 'white');
+            
+            // 新しいクラスを追加
             stone.classList.add(this.currentPlayer);
             stone.classList.add('animate__animated', 'animate__fadeIn');
             
